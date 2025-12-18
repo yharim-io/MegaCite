@@ -1,63 +1,46 @@
-import pymysql.connections
-from .models import User
+from dao.models import User
 
 class MySQLUserDAO:
-    """MySQL 实现的 UserDAO。"""
-
-    def __init__(self, conn: pymysql.connections.Connection):
+    def __init__(self, conn):
         self.conn = conn
 
-    def create_user(self, username: str, password_hash: str) -> int:
-        with self.conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO users (username, password_hash) VALUES (%s, %s)",
-                (username, password_hash),
-            )
-            user_id = cur.lastrowid
+    def create_user(self, username, password_hash, email=None):
+        cursor = self.conn.cursor()
+        # [注意] 如果数据库表 users 还没有 email 列，需要手动执行 ALTER TABLE users ADD COLUMN email VARCHAR(255);
+        sql = "INSERT INTO users (username, password_hash, email, created_at) VALUES (%s, %s, %s, NOW())"
+        cursor.execute(sql, (username, password_hash, email))
         self.conn.commit()
-        return user_id
+        return cursor.lastrowid
 
-    def get_user_by_username(self, username: str) -> User | None:
-        with self.conn.cursor() as cur:
-            cur.execute(
-                "SELECT id, username, password_hash FROM users WHERE username = %s",
-                (username,),
-            )
-            row = cur.fetchone()
-        if not row:
-            return None
-        return User(id=row[0], username=row[1], password_hash=row[2])
+    def get_user_by_username(self, username):
+        # Removed dictionary=True to fix compatibility issues
+        cursor = self.conn.cursor() 
+        sql = "SELECT id, username, password_hash, created_at, email FROM users WHERE username = %s"
+        cursor.execute(sql, (username,))
+        row = cursor.fetchone()
+        cursor.close()
+        
+        if row:
+            # Manually map row to User object
+            return User(id=row[0], username=row[1], password_hash=row[2], created_at=row[3], email=row[4])
+        return None
 
-    def get_user_by_id(self, user_id: int) -> User | None:
-        with self.conn.cursor() as cur:
-            cur.execute(
-                "SELECT id, username, password_hash FROM users WHERE id = %s",
-                (user_id,),
-            )
-            row = cur.fetchone()
-        if not row:
-            return None
-        return User(id=row[0], username=row[1], password_hash=row[2])
+    def get_user_by_id(self, user_id):
+        # Removed dictionary=True to fix compatibility issues
+        cursor = self.conn.cursor()
+        sql = "SELECT id, username, password_hash, created_at, email FROM users WHERE id = %s"
+        cursor.execute(sql, (user_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        
+        if row:
+            # Manually map row to User object
+            return User(id=row[0], username=row[1], password_hash=row[2], created_at=row[3], email=row[4])
+        return None
 
-    def update_user(self, user_id: int, updates: dict[str, any]) -> bool:
-        if not updates:
-            return False
-        keys = []
-        values = []
-        for k, v in updates.items():
-            keys.append(f"{k} = %s")
-            values.append(v)
-        values.append(user_id)
-        sql = f"UPDATE users SET {', '.join(keys)} WHERE id = %s"
-        with self.conn.cursor() as cur:
-            cur.execute(sql, tuple(values))
-            changed = cur.rowcount
+    def update_password(self, user_id, new_hash):
+        cursor = self.conn.cursor()
+        sql = "UPDATE users SET password_hash = %s WHERE id = %s"
+        cursor.execute(sql, (new_hash, user_id))
         self.conn.commit()
-        return changed > 0
-
-    def delete_user(self, user_id: int) -> bool:
-        with self.conn.cursor() as cur:
-            cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
-            deleted = cur.rowcount
-        self.conn.commit()
-        return deleted > 0
+        cursor.close()

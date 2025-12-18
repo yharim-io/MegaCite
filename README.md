@@ -8,6 +8,10 @@ Blog Content Migration and Reference Management System.
 bash scripts/install_mysql.sh # `install_mysql_mac.sh` for MacOS
 playwright install
 export MC_API_KEY="your-openai-api-key"
+export SMTP_SERVER="your-smtp-server"
+export SMTP_PORT="your-smtp-port"
+export SMTP_USER="your-email-address"
+export SMTP_PASSWORD="your-email-password-or-token"
 python cli.py server start 8080
 ```
 

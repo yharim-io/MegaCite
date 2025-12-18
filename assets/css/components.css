@@ -17,10 +17,32 @@
 .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
 .btn-cancel { display: block; text-align: center; margin-top: 12px; font-size: 13px; color: var(--vp-c-text-3); cursor: pointer; }
 .btn-cancel:hover { color: var(--vp-c-text-2); }
-.password-wrapper { position: relative; width: 100%; margin-bottom: 0 !important; }
+.password-wrapper { position: relative; width: 100%; margin-bottom: 16px; }
+.password-wrapper .form-input { margin-bottom: 0; }
 .password-toggle { position: absolute; right: 12px; top: 19px; transform: translateY(-50%); cursor: pointer; color: var(--vp-c-text-3); display: flex; align-items: center; }
 .password-toggle svg { width: 18px; height: 18px; }
 .password-toggle:hover { color: var(--vp-c-text-1); }
+
+/* [新增] 验证码行样式 */
+.form-row-split { display: flex; gap: 10px; margin-bottom: 16px; }
+.form-row-split .form-input { margin-bottom: 0; }
+.btn-get-code { 
+    white-space: nowrap; 
+    padding: 0 18px; 
+    font-size: 13px; 
+    font-weight: bold;
+    background: var(--vp-c-brand-soft); 
+    color: var(--vp-c-brand); 
+    border: 1px solid transparent;
+    border-radius: 6px; 
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 42px; /* 与 input 高度对齐 */
+    line-height: 40px;
+}
+.btn-get-code:hover:not(:disabled) { background: var(--vp-c-brand); color: white; }
+.btn-get-code:disabled { opacity: 0.6; cursor: not-allowed; color: var(--vp-c-text-3); background: var(--vp-c-bg-mute); }
+
 
 /* Unified Buttons */
 .btn-bind, .btn-action, .btn-unbind { padding: 6px 16px; font-size: 13px; border-radius: 4px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; line-height: 1.5; height: 32px; min-width: 80px; }
