@@ -4,7 +4,7 @@ import pymysql.connections
 class MySQLPostDAO:
     """MySQL 实现的 PostDAO。"""
 
-    ALLOWED_FIELDS = {"context", "title", "date", "description", "category", "owner_id"}
+    ALLOWED_FIELDS = {"context", "title", "date", "description", "category", "owner_id", "is_public"}
 
     def __init__(self, conn: pymysql.connections.Connection):
         self.conn = conn
@@ -15,12 +15,12 @@ class MySQLPostDAO:
             date = datetime.now().date()
         with self.conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO posts (cid, owner_id, title, category, date) VALUES (%s, %s, %s, %s, %s)",
-                (cid, owner_id, title, category, date),
+                "INSERT INTO posts (cid, owner_id, title, category, date, is_public) VALUES (%s, %s, %s, %s, %s, %s)",
+                (cid, owner_id, title, category, date, False),
             )
         self.conn.commit()
 
-    def update_field(self, cid: str, field: str, value: str) -> bool:
+    def update_field(self, cid: str, field: str, value: any) -> bool:
         if field not in self.ALLOWED_FIELDS:
             return False
         sql = f"UPDATE posts SET {field} = %s WHERE cid = %s"
@@ -33,7 +33,6 @@ class MySQLPostDAO:
     def update_post_fields(self, cid: str, **kwargs) -> bool:
         """
         同时更新多个字段。
-        用于在解决冲突时原子更新 title 和 category。
         """
         if not kwargs: return False
         
@@ -83,6 +82,33 @@ class MySQLPostDAO:
             rows = cur.fetchall()
         return [r[0] for r in rows] if rows else []
 
+    def list_public_posts(self) -> list[dict]:
+        """获取所有公开的文章，包含作者信息和内容摘要"""
+        # 使用 LEFT(context, 200) 获取前200字符作为摘要基础，后续在 Python 中处理
+        sql = """
+            SELECT p.cid, p.title, p.category, p.date, p.description, u.username, LEFT(p.context, 200)
+            FROM posts p
+            JOIN users u ON p.owner_id = u.id
+            WHERE p.is_public = TRUE
+            ORDER BY p.date DESC
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(sql)
+            rows = cur.fetchall()
+        
+        return [
+            {
+                "cid": r[0],
+                "title": r[1],
+                "category": r[2],
+                "date": str(r[3]),
+                "description": r[4],
+                "author": r[5],
+                "snippet": r[6]  # 新增摘要字段
+            }
+            for r in rows
+        ]
+
     def search_posts(self, keyword: str) -> list[str]:
         like = f"%{keyword}%"
         results: list[str] = []
@@ -113,7 +139,6 @@ class MySQLPostDAO:
         return results
 
     def get_all_categories(self) -> list[str]:
-        """[新增] 获取所有去重的分类列表"""
         with self.conn.cursor() as cur:
             cur.execute("SELECT DISTINCT category FROM posts ORDER BY category")
             rows = cur.fetchall()

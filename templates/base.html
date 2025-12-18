@@ -16,6 +16,9 @@
                     <span>MegaCite</span>
                 </a>
                 <nav class="nav-group">
+                    <!-- 广场入口：添加 {nav_playground_active} 支持 -->
+                    <a href="/playground.html" class="nav-link {nav_playground_active}">广场</a>
+                    
                     <span id="auth-guest">
                         <span class="nav-link" id="btn-login-trigger">登录</span>
                     </span>
@@ -53,14 +56,14 @@
                     </span>
                 </div>
 
-                <!-- [新增] 邮箱输入行 (仅注册显示) -->
                 <div id="row-email" style="display: none;">
-                    <input id="inp-email" type="text" class="form-input" placeholder="邮箱地址">
+                    <!-- 禁止邮箱历史输入 -->
+                    <input id="inp-email" type="text" class="form-input" placeholder="邮箱地址" autocomplete="off">
                 </div>
 
-                <!-- [新增] 验证码输入行 (仅注册显示) -->
                 <div id="row-code" class="form-row-split" style="display: none;">
-                    <input id="inp-code" type="text" class="form-input" placeholder="6位验证码" maxlength="6" style="flex: 1;">
+                    <!-- 禁止验证码历史输入 -->
+                    <input id="inp-code" type="text" class="form-input" placeholder="6位验证码" maxlength="6" style="flex: 1;" autocomplete="off">
                     <button id="btn-get-code" class="btn-get-code">获取验证码</button>
                 </div>
 

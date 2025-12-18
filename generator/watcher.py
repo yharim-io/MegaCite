@@ -16,8 +16,9 @@ class DBWatcher:
         state = {}
         conn = create_connection()
         try:
+            # [新增] 包含 is_public
             with conn.cursor() as cur:
-                cur.execute("SELECT cid, owner_id, title, context, description, date, category FROM posts")
+                cur.execute("SELECT cid, owner_id, title, context, description, date, category, is_public FROM posts")
                 rows = cur.fetchall()
                 for r in rows:
                     cid, owner_id = r[0], r[1]
@@ -25,9 +26,8 @@ class DBWatcher:
                         "cid": cid, "owner_id": owner_id, 
                         "title": r[2], "context": r[3], 
                         "description": r[4], "date": str(r[5]), 
-                        "category": r[6]
+                        "category": r[6], "is_public": bool(r[7])
                     }
-                    # 简单哈希签名用于检测变更
                     sig = hash(tuple(data_map.values()))
                     state[cid] = {"owner_id": owner_id, "data": data_map, "signature": sig}
         finally:
@@ -47,19 +47,15 @@ class DBWatcher:
     def _scan(self):
         new_state = self._get_current_state()
         
-        # 待更新任务集合：cid -> info
         tasks = {}
         affected_users = set()
 
-        # 1. 扫描变更
         for cid, info in new_state.items():
             old_info = self._snapshot.get(cid)
             
-            # 检测到直接变更 (新增 或 内容变化)
             if not old_info or old_info["signature"] != info["signature"]:
                 tasks[cid] = info
                 
-                # --- 级联更新逻辑 ---
                 if old_info:
                     old_data = old_info["data"]
                     new_data = info["data"]
@@ -77,18 +73,13 @@ class DBWatcher:
                         finally:
                             conn.close()
 
-        # 2. 扫描删除 (物理删除 + 内存映射清理)
         for cid, info in self._snapshot.items():
             if cid not in new_state:
                 self.gen.remove_post_file(cid)
                 affected_users.add(info["owner_id"])
 
-        # 2.5 [新增] 清理旧文件
-        # 在更新 URL 映射之前，必须先根据旧的元数据删除旧文件。
-        # 否则一旦映射更新，就找不到旧文件的路径了。
         if tasks:
             for cid in tasks:
-                # 只处理更新的情况 (old -> new)，新增文章没有旧文件
                 if cid in self._snapshot:
                     old_data = self._snapshot[cid]["data"]
                     new_data = tasks[cid]["data"]
@@ -98,12 +89,10 @@ class DBWatcher:
                     new_title = new_data.get("title", "untitled")
                     new_cat = new_data.get("category", "default")
 
-                    # 只有当路径关键信息变更时才执行物理删除
                     if old_title != new_title or old_cat != new_cat:
                         username = self._get_username(self._snapshot[cid]["owner_id"])
                         self.gen.remove_post_file_by_meta(username, old_cat, old_title)
 
-        # 3. 预先更新所有变更文章的 URL 映射 (解决时序问题)
         if tasks:
             print(f"[Watcher] Pre-updating URL mappings for {len(tasks)} tasks...")
             for cid, info in tasks.items():
@@ -116,15 +105,17 @@ class DBWatcher:
                     data.get("title", "untitled")
                 )
 
-        # 4. 执行生成 (覆盖写入新文件)
         for cid, info in tasks.items():
             username = self._get_username(info["owner_id"])
             self.gen.sync_post_file(info["data"], username)
             affected_users.add(info["owner_id"])
 
-        # 5. 更新索引
         for uid in affected_users:
             self.gen.sync_user_index(uid)
+
+        # [新增] 只要有变动，就尝试更新广场 (简单粗暴策略)
+        if tasks or affected_users:
+            self.gen.sync_playground()
 
         self._snapshot = new_state
 

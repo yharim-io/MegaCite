@@ -9,8 +9,7 @@ class User:
         self.password_hash = password_hash
         self.created_at = created_at
         self.email = email
-        # 兼容性设计：忽略多余的 kwargs 参数（防止数据库字段变动导致报错）
-
+        # 兼容性设计：忽略多余的 kwargs 参数
 
 @dataclass
 class Post:
@@ -21,3 +20,4 @@ class Post:
     description: str | None
     category: str | None
     date: date
+    is_public: bool = False

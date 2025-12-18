@@ -2,6 +2,7 @@ import os
 import shutil
 from collections import defaultdict
 from core.url_manager import URLManager
+from core.post import get_playground_posts
 from generator.renderer import HTMLRenderer
 from dao.factory import create_connection
 
@@ -33,6 +34,7 @@ class StaticSiteGenerator:
 
         self.sync_landing_page()
         self.sync_static_pages()
+        self.sync_playground()
 
     def sync_landing_page(self):
         html = self.renderer.render_landing_page()
@@ -48,7 +50,7 @@ class StaticSiteGenerator:
         with open(path, "w", encoding="utf-8") as f:
             f.write(html)
             
-        # [新增] Editor
+        # Editor
         html_editor = self.renderer.render_editor_page()
         path_editor = self._get_abs_path("edit.html")
         with open(path_editor, "w", encoding="utf-8") as f:
@@ -60,6 +62,15 @@ class StaticSiteGenerator:
         html_admin = self.renderer.render_admin_stub()
         with open(os.path.join(admin_dir, "index.html"), "w", encoding="utf-8") as f:
             f.write(html_admin)
+
+    def sync_playground(self):
+        """生成广场页面"""
+        posts = get_playground_posts()
+        html = self.renderer.render_playground_page(posts)
+        path = self._get_abs_path("playground.html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+        print(f"[Gen] Playground updated: {path}")
 
     def _get_abs_path(self, rel_path: str) -> str:
         return os.path.join(self.base_dir, rel_path)
@@ -106,7 +117,8 @@ class StaticSiteGenerator:
                 username = row[0]
 
             with conn.cursor() as cur:
-                cur.execute("SELECT cid, title, category, date FROM posts WHERE owner_id=%s ORDER BY date DESC", (user_id,))
+                # [新增] 查询 is_public 字段
+                cur.execute("SELECT cid, title, category, date, is_public FROM posts WHERE owner_id=%s ORDER BY date DESC", (user_id,))
                 rows = cur.fetchall()
 
             categorized = defaultdict(list)
@@ -114,6 +126,7 @@ class StaticSiteGenerator:
                 p_cid, p_title = r[0], r[1] or "untitled"
                 p_cat = r[2] or "default"
                 p_date = r[3]
+                p_is_public = bool(r[4])
                 
                 rel_prefix = self.url_mgr.register_mapping(p_cid, username, p_cat, p_title)
                 link_href = f"/{rel_prefix}.html"
@@ -122,7 +135,8 @@ class StaticSiteGenerator:
                     "cid": p_cid,
                     "title": p_title, 
                     "filename": link_href,
-                    "date": str(p_date)
+                    "date": str(p_date),
+                    "is_public": p_is_public  # 传递公开状态
                 })
             
             html = self.renderer.render_user_index(username, categorized)
@@ -145,7 +159,6 @@ class StaticSiteGenerator:
                 os.remove(full_path)
                 print(f"[Gen] Deleted: {full_path}")
             
-            # 尝试清理空目录
             try:
                 parent_dir = os.path.dirname(full_path)
                 if not os.listdir(parent_dir):

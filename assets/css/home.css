@@ -8,7 +8,7 @@
 .hero-text { font-size: 48px; line-height: 1.1; font-weight: 800; color: var(--vp-c-text-1); margin: 0 auto 24px; }
 .hero-tagline { font-size: 20px; color: var(--vp-c-text-2); margin: 0 auto; max-width: 600px; line-height: 1.6; }
 
-/* [新增] Google 风格 Get Started 按钮 */
+/* Get Started 按钮 */
 .btn-get-started {
     background-color: var(--vp-c-brand);
     color: white;
@@ -16,7 +16,7 @@
     padding: 12px 32px;
     font-size: 16px;
     font-weight: 600;
-    border-radius: 9999px; /* 超级圆角 */
+    border-radius: 9999px;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -31,6 +31,59 @@
 .btn-get-started:active {
     transform: translateY(0);
     box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* [新增] Dashboard 按钮 (紫色，区别于其他按钮) */
+.btn-dashboard {
+    background-color: #8e44ad; /* 独特的紫色 */
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 9999px;
+    cursor: pointer;
+    text-decoration: none;
+    /* 默认隐藏，登录后由 JS 显示 */
+    display: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-dashboard:hover {
+    background-color: #9b59b6;
+    transform: translateY(-1px);
+    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-dashboard:active {
+    transform: translateY(0);
+}
+
+/* Playground 按钮 (绿色) */
+.btn-playground {
+    background-color: var(--color-success);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 9999px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-playground:hover {
+    background-color: var(--color-success-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.btn-playground:active {
+    transform: translateY(0);
 }
 
 /* Features */

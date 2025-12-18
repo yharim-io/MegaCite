@@ -1,5 +1,6 @@
 import os
 import markdown
+import re
 from core.url_manager import URLManager
 from generator.markdown_extensions import CiteReferenceExtension
 from generator.content_updater import update_post_content_in_db, update_post_references_in_db
@@ -14,11 +15,9 @@ class HTMLRenderer:
         project_root = os.path.dirname(current_dir)
         template_dir = os.path.join(project_root, "templates")
 
-        # 加载基础模版
         with open(os.path.join(template_dir, "base.html"), "r", encoding="utf-8") as f:
             self.template_base = f.read()
 
-        # 加载模版片段
         with open(os.path.join(template_dir, "index.html"), "r", encoding="utf-8") as f:
             self.template_index = f.read()
     
@@ -46,27 +45,32 @@ class HTMLRenderer:
         else:
             self.template_editor = "<h1>Editor Template Missing</h1>"
 
+        playground_path = os.path.join(template_dir, "playground.html")
+        if os.path.exists(playground_path):
+            with open(playground_path, "r", encoding="utf-8") as f:
+                self.template_playground = f.read()
+        else:
+            self.template_playground = "<main><h1>Playground Missing</h1></main>"
+
     def _render_full(self, 
                      content: str, 
                      page_title: str, 
                      nav_console_active: str = "",
                      nav_settings_active: str = "",
+                     nav_playground_active: str = "",
                      meta_extra: str = "",
                      modal_extra: str = "") -> str:
-        """
-        组装最终页面
-        """
         return self.template_base.format(
             content=content,
             page_title=page_title,
             nav_console_active=nav_console_active,
             nav_settings_active=nav_settings_active,
+            nav_playground_active=nav_playground_active,
             meta_extra=meta_extra,
             modal_extra=modal_extra
         )
 
     def render_landing_page(self) -> str:
-        # 首页：MegaCite - 构建你的数字花园
         return self._render_full(
             content=self.template_home,
             page_title="MegaCite - 构建你的数字花园"
@@ -83,17 +87,7 @@ class HTMLRenderer:
         return self.template_editor
 
     def render_admin_stub(self) -> str:
-        return """
-        <!DOCTYPE html>
-        <html>
-        <head><title>Admin Dashboard</title><link href="/style.css" rel="stylesheet"></head>
-        <body style="padding: 40px; text-align:center;">
-            <h1>Admin Dashboard</h1>
-            <p>Welcome, Admin.</p>
-            <a href="/" class="action-btn brand">Back Home</a>
-        </body>
-        </html>
-        """
+        return """..."""
 
     def render_user_index(self, username: str, categorized_posts: dict) -> str:
         parts = []
@@ -101,17 +95,31 @@ class HTMLRenderer:
             posts = categorized_posts[category]
             items = []
             for p in posts:
+                is_public_checked = "checked" if p.get('is_public') else ""
+                
+                # [修复] 这里的类名改为 post-item-controls 必须与 auth.js 一致
+                # 添加 console-item 类以区分样式
                 item_html = f"""
-                <div class="post-item-container">
+                <div class="post-item-container console-item">
                     <a href="{p['filename']}" class="post-item-link">
                         <div class="post-item-title">{p['title']}</div>
                         <div class="post-item-meta">
                             <span>{p['date']}</span>
                         </div>
                     </a>
-                    <button class="btn-delete-post" data-cid="{p['cid']}" title="删除文章" style="display:none;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
+                    
+                    <div class="post-item-controls" style="display:none;">
+                        <div class="control-group-toggle">
+                            <span class="control-label">公开</span>
+                            <label class="switch list-switch">
+                                <input type="checkbox" class="list-public-toggle" data-cid="{p['cid']}" {is_public_checked}>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <button class="btn-delete-post icon-only" data-cid="{p['cid']}" title="删除文章">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
                 </div>
                 """
                 items.append(item_html)
@@ -146,9 +154,49 @@ class HTMLRenderer:
             modal_extra=""
         )
 
+    def render_playground_page(self, posts: list[dict]) -> str:
+        items = []
+        for p in posts:
+            rel_path = self.url_mgr.register_mapping(p['cid'], p['author'], p['category'], p['title'])
+            filename = f"/{rel_path}.html"
+            
+            raw_snippet = p.get('snippet', '') or ''
+            clean_snippet = re.sub(r'[\r\n]+', ' ', raw_snippet)[:50]
+            if len(raw_snippet) > 50:
+                clean_snippet += "..."
+            if not clean_snippet.strip():
+                clean_snippet = "暂无预览"
+
+            # 添加 playground-item 类
+            item_html = f"""
+            <div class="post-item-container playground-item">
+                <a href="{filename}" class="post-item-link">
+                    <div class="post-item-title">{p['title']}</div>
+                    <div class="post-item-snippet">{clean_snippet}</div>
+                    <div class="post-item-meta">
+                        <span class="post-item-author">{p['author']}</span>
+                        <span>{p['date']}</span>
+                    </div>
+                </a>
+            </div>
+            """
+            items.append(item_html)
+            
+        list_html = f'<div class="post-list">{"".join(items)}</div>' if items else "<p style='text-align:center;color:var(--vp-c-text-3)'>暂无公开内容</p>"
+        
+        fragment_html = self.template_playground.format(content_list=list_html)
+        
+        return self._render_full(
+            content=fragment_html,
+            page_title=f"广场 - MegaCite",
+            nav_playground_active="active",
+            meta_extra='<meta name="page-type" content="playground">'
+        )
+
     def render_post(self, post_data: dict, author_name: str, cid: str) -> str:
         raw_content = str(post_data.get("context", "") or "")
         desc_text = post_data.get("description", "")
+        is_public = post_data.get("is_public", False)
         
         if desc_text and desc_text.strip():
             description_html = f"""
@@ -183,7 +231,8 @@ class HTMLRenderer:
             category=post_data.get("category", "default") or "default",
             cid=cid,
             content_body=content,
-            description_block=description_html
+            description_block=description_html,
+            is_public_checked="checked" if is_public else ""
         )
         
         return self._render_full(

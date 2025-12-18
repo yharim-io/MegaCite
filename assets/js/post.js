@@ -1,11 +1,8 @@
-/**
- * post.js
- * 文章管理模块 (创建, 删除, 迁移)
- */
 import { showToast } from './utils.js';
 
 let migrateAbortController = null;
 let deleteTargetCid = null;
+let deleteRedirectUrl = null; // 用于存储删除后的跳转目标
 
 export function initPostListeners() {
     const btnCreatePost = document.getElementById('btn-create-post');
@@ -24,7 +21,65 @@ export function initPostListeners() {
     const btnConfirmDelete = document.getElementById('btn-confirm-delete');
     const btnCancelDelete = document.getElementById('btn-cancel-delete');
 
-    // --- 创建文章 ---
+    // 绑定文章列表中的开关
+    document.querySelectorAll('.list-public-toggle').forEach(toggle => {
+        toggle.addEventListener('change', async () => {
+            const cid = toggle.dataset.cid;
+            const isPublic = toggle.checked;
+            
+            try {
+                const res = await fetch('/api/post/set_public', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': localStorage.getItem('mc_token')
+                    },
+                    body: JSON.stringify({ cid: cid, is_public: isPublic })
+                });
+
+                if (res.ok) {
+                    showToast(isPublic ? '文章已公开' : '文章已转为私有');
+                } else {
+                    toggle.checked = !isPublic; 
+                    showToast('设置失败，请重试');
+                }
+            } catch (e) {
+                toggle.checked = !isPublic; 
+                showToast('网络错误');
+            }
+        });
+    });
+
+    // 文章页面顶部开关
+    const publicToggle = document.getElementById('public-toggle');
+    if (publicToggle) {
+        publicToggle.addEventListener('change', async () => {
+            const cid = document.querySelector('meta[name="post-cid"]').getAttribute('content');
+            const isPublic = publicToggle.checked;
+            
+            try {
+                const res = await fetch('/api/post/set_public', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': localStorage.getItem('mc_token')
+                    },
+                    body: JSON.stringify({ cid: cid, is_public: isPublic })
+                });
+
+                if (res.ok) {
+                    showToast(isPublic ? '文章已公开' : '文章已转为私有');
+                } else {
+                    publicToggle.checked = !isPublic;
+                    showToast('设置失败，请重试');
+                }
+            } catch (e) {
+                publicToggle.checked = !isPublic;
+                showToast('网络错误');
+            }
+        });
+    }
+
     if (btnCreatePost) {
         btnCreatePost.addEventListener('click', async () => {
             if (btnCreatePost.disabled) return;
@@ -62,19 +117,32 @@ export function initPostListeners() {
         });
     }
 
-    // --- 删除文章 ---
-    document.querySelectorAll('.btn-delete-post').forEach(btn => {
+    // 绑定删除按钮 (列表中的删除 + 文章页面的删除)
+    const bindDeleteBtn = (btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            deleteTargetCid = btn.dataset.cid;
-            if(deleteModal) deleteModal.classList.add('open');
+            deleteTargetCid = btn.dataset.cid || document.querySelector('meta[name="post-cid"]')?.getAttribute('content');
+            
+            // 检查是否有 data-redirect 属性
+            if (btn.dataset.redirect) {
+                deleteRedirectUrl = btn.dataset.redirect;
+            } else {
+                deleteRedirectUrl = null;
+            }
+
+            if(deleteModal && deleteTargetCid) deleteModal.classList.add('open');
         });
-    });
+    };
+
+    document.querySelectorAll('.btn-delete-post').forEach(bindDeleteBtn);
+    const pageDeleteBtn = document.getElementById('btn-delete-current-post');
+    if (pageDeleteBtn) bindDeleteBtn(pageDeleteBtn);
 
     if (btnCancelDelete) {
         btnCancelDelete.addEventListener('click', () => {
             if(deleteModal) deleteModal.classList.remove('open');
             deleteTargetCid = null;
+            deleteRedirectUrl = null;
         });
     }
 
@@ -96,7 +164,11 @@ export function initPostListeners() {
 
                 if (res.ok) {
                     localStorage.setItem('mc_pending_toast', '文章已删除');
-                    location.reload();
+                    if (deleteRedirectUrl) {
+                        window.location.href = deleteRedirectUrl; // 跳转
+                    } else {
+                        location.reload(); // 原地刷新
+                    }
                 } else {
                     const data = await res.json();
                     showToast('删除失败: ' + (data.error || '未知错误'));

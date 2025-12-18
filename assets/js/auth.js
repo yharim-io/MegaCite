@@ -1,20 +1,37 @@
-/**
- * auth.js
- * 认证与用户状态管理模块
- * 包含：登录/注册、邮箱验证、第三方绑定、用户信息、密码修改
- */
 import { showToast } from './utils.js';
+
+// 检查 Token 有效性
+export async function checkTokenValidity() {
+    const token = localStorage.getItem('mc_token');
+    if (!token) return;
+
+    try {
+        const res = await fetch('/api/user/info', {
+            headers: { 'Authorization': token }
+        });
+        
+        if (res.status === 401 || res.status === 403) {
+            console.log("Token expired, clearing session...");
+            localStorage.removeItem('mc_token');
+            localStorage.removeItem('mc_username');
+            document.cookie = "mc_token=; path=/; max-age=0";
+            
+            localStorage.setItem('mc_pending_toast', '会话已过期，请重新登录');
+            location.reload();
+        }
+    } catch (e) {
+        console.error("Token validity check error:", e);
+    }
+}
 
 let currentSessionId = null;
 let authEventSource = null;
 let isRegisterMode = false;
 let countdownTimer = null;
 
-// --- 第三方绑定逻辑 (挂载到 window 以供 HTML onclick 调用) ---
-
+// ... (window.unbindAuth, window.startAuth, updateBindings, fetchUserProfile 等函数保持不变) ...
 window.unbindAuth = async (platform) => {
     if (!confirm(`确定要解除 ${platform} 的绑定吗？这意味着您将无法自动同步该平台的文章。`)) return;
-
     try {
         const res = await fetch('/api/auth/unbind', {
             method: 'POST',
@@ -24,7 +41,6 @@ window.unbindAuth = async (platform) => {
             },
             body: JSON.stringify({ platform })
         });
-        
         if (res.ok) {
             showToast('已解除绑定');
             updateBindings();
@@ -47,18 +63,12 @@ window.startAuth = async (platform) => {
             },
             body: JSON.stringify({ platform })
         });
-        
         if (!initRes.ok) throw new Error('启动失败');
-
         const initData = await initRes.json();
         currentSessionId = initData.session_id;
-        
         showToast('正在启动验证客户端...');
-        
         if (authEventSource) authEventSource.close();
-        
         authEventSource = new EventSource(`/api/auth/watch?session_id=${currentSessionId}`);
-        
         authEventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.status === 'authenticated') {
@@ -72,9 +82,7 @@ window.startAuth = async (platform) => {
                 showToast('绑定失败: ' + (data.error || '未知错误'));
             }
         };
-
         const clientUrl = 'http://127.0.0.1:9999/verify';
-        
         setTimeout(async () => {
             try {
                 await fetch(clientUrl, {
@@ -88,18 +96,15 @@ window.startAuth = async (platform) => {
                 });
                 showToast('验证客户端已启动，请在浏览器中完成登录');
             } catch (e) {
-                showToast('无法连接到本地客户端，请确保客户端正在运行\n' + 
-                          '启动方式: python client/verifier.py --server ' + window.location.origin);
+                showToast('无法连接到本地客户端，请确保客户端正在运行');
                 if (authEventSource) authEventSource.close();
             }
         }, 500);
-
     } catch (e) {
         showToast('错误: ' + e.message);
     }
 };
 
-// 获取并更新绑定状态
 async function updateBindings() {
     try {
         const res = await fetch('/api/auth/bindings', {
@@ -107,12 +112,10 @@ async function updateBindings() {
         });
         const data = await res.json();
         const boundPlatforms = new Set(data.bindings || []);
-
         document.querySelectorAll('.btn-bind').forEach(btn => {
             const platform = btn.dataset.platform;
             if (!platform) return;
             btn.classList.remove('status-loading', 'status-bound', 'status-unbound');
-            
             if (boundPlatforms.has(platform)) {
                 btn.textContent = '更新'; 
                 btn.classList.add('status-bound'); 
@@ -122,7 +125,6 @@ async function updateBindings() {
             }
             btn.disabled = false;
         });
-
         document.querySelectorAll('.btn-unbind').forEach(btn => {
             const platform = btn.dataset.platform;
             if (boundPlatforms.has(platform)) {
@@ -136,39 +138,29 @@ async function updateBindings() {
     }
 }
 
-// [新增] 获取用户信息 (设置页)
 async function fetchUserProfile() {
     const userProfile = document.getElementById('user-profile');
     const userProfileLoading = document.getElementById('user-profile-loading');
     const profileUsername = document.getElementById('profile-username');
     const profileEmail = document.getElementById('profile-email');
     const profileDate = document.getElementById('profile-date');
-
-    // 只有当页面存在 user-profile 元素时才执行（即在设置页）
     if (!userProfile) return; 
-    
-    // 显示 Loading
     if (userProfileLoading) userProfileLoading.style.display = 'block';
-
     try {
         const res = await fetch('/api/user/info', {
             headers: { 'Authorization': localStorage.getItem('mc_token') }
         });
-        
         if (res.ok) {
             const data = await res.json();
             if (userProfileLoading) userProfileLoading.style.display = 'none';
             if (userProfile) userProfile.style.display = 'block';
-            
             if (profileUsername) profileUsername.textContent = data.username;
             if (profileEmail) profileEmail.textContent = data.email;
             if (profileDate) profileDate.textContent = data.created_at;
         } else {
-            console.error("Failed to load user info:", res.status);
             if (userProfileLoading) userProfileLoading.textContent = "加载失败";
         }
     } catch (e) {
-        console.error("Failed to load user profile", e);
         if (userProfileLoading) userProfileLoading.textContent = "加载错误";
     }
 }
@@ -185,54 +177,69 @@ export function updateAuthUI() {
     const linkMyHome = document.getElementById('link-my-home');
     const dashboardActions = document.getElementById('dashboard-actions');
     const btnEditTrigger = document.getElementById('btn-edit-trigger');
-    const landingAction = document.getElementById('landing-action');
+    const publicToggleContainer = document.getElementById('public-toggle-container'); 
+    
+    const btnGetStarted = document.getElementById('btn-get-started');
+    const btnDashboard = document.getElementById('btn-dashboard');
 
     if (isLoggedIn) {
         if(guestArea) guestArea.style.display = 'none';
         if(userArea) userArea.style.display = 'flex';
         if(usernameDisplay) usernameDisplay.textContent = username;
         if(linkMyHome) linkMyHome.href = `/${username}/index.html`;
-        if(landingAction) landingAction.style.display = 'none';
         
-        // 首页控制台
+        // 登录后隐藏 Get Started，显示 Dashboard
+        if(btnGetStarted) btnGetStarted.style.display = 'none';
+        if(btnDashboard) {
+            btnDashboard.style.display = 'inline-block';
+            btnDashboard.href = `/${username}/index.html`;
+        }
+        
+        // ... (其他 meta 检查逻辑保持不变)
         const pageOwnerMeta = document.querySelector('meta[name="page-owner"]');
-        if (pageOwnerMeta && dashboardActions) {
+        if (pageOwnerMeta) {
             const pageOwner = pageOwnerMeta.getAttribute('content');
             if (pageOwner === username) {
-                dashboardActions.style.display = 'flex';
-                document.querySelectorAll('.btn-delete-post').forEach(btn => {
-                    btn.style.display = 'block';
+                if(dashboardActions) dashboardActions.style.display = 'flex';
+                document.querySelectorAll('.post-item-controls').forEach(el => {
+                    el.style.display = 'flex';
                 });
             }
         }
 
-        // 文章页编辑按钮
         const postAuthorMeta = document.querySelector('meta[name="post-author"]');
-        if (postAuthorMeta && btnEditTrigger) {
+        if (postAuthorMeta) {
             const postAuthor = postAuthorMeta.getAttribute('content');
             if (postAuthor === username) {
-                btnEditTrigger.style.display = 'inline-flex';
+                if (btnEditTrigger) btnEditTrigger.style.display = 'inline-flex';
+                const btnDeletePage = document.getElementById('btn-delete-current-post');
+                if (btnDeletePage) btnDeletePage.style.display = 'inline-flex';
+                if (publicToggleContainer) publicToggleContainer.style.display = 'flex';
+                
                 const cid = document.querySelector('meta[name="post-cid"]').getAttribute('content');
-                btnEditTrigger.onclick = () => {
-                    window.location.href = `/edit.html?cid=${cid}`;
-                };
+                if (btnEditTrigger) {
+                    btnEditTrigger.onclick = () => {
+                        window.location.href = `/edit.html?cid=${cid}`;
+                    };
+                }
             }
         }
 
-        // 设置页加载数据
         if (document.getElementById('platform-list')) {
             updateBindings();
-            fetchUserProfile(); // [新增] 调用获取用户信息
+            fetchUserProfile();
         }
     } else {
         if(guestArea) guestArea.style.display = 'inline-block';
         if(userArea) userArea.style.display = 'none';
         if(dashboardActions) dashboardActions.style.display = 'none';
-        if(landingAction) landingAction.style.display = 'block';
+        
+        if(btnGetStarted) btnGetStarted.style.display = 'inline-block';
+        // 未登录时隐藏 Dashboard
+        if(btnDashboard) btnDashboard.style.display = 'none';
     }
 }
 
-// 初始化认证相关的事件监听
 export function initAuthListeners() {
     const btnLogout = document.getElementById('btn-logout');
     const modalOverlay = document.getElementById('login-modal');
@@ -244,15 +251,14 @@ export function initAuthListeners() {
     const tabRegister = document.getElementById('tab-register');
     const settingsForm = document.getElementById('settings-form');
     const btnGetStarted = document.getElementById('btn-get-started');
+    // const btnDashboard = document.getElementById('btn-dashboard'); // 不再需要监听点击，因为未登录不显示
 
-    // 注册专用元素
     const rowEmail = document.getElementById('row-email');
     const rowCode = document.getElementById('row-code');
     const inpEmail = document.getElementById('inp-email');
     const inpCode = document.getElementById('inp-code');
     const btnGetCode = document.getElementById('btn-get-code');
 
-    // 密码可见性切换
     const iconEye = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
     const iconEyeOff = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
 
@@ -285,7 +291,6 @@ export function initAuthListeners() {
             localStorage.removeItem('mc_token');
             localStorage.removeItem('mc_username');
             document.cookie = "mc_token=; path=/; max-age=0";
-            
             if (window.location.pathname.includes('settings') || window.location.pathname.includes('edit')) {
                 window.location.href = '/';
             } else {
@@ -294,7 +299,6 @@ export function initAuthListeners() {
         });
     }
 
-    // 切换登录/注册模式 UI
     const toggleMode = (register) => {
         isRegisterMode = register;
         if (register) {
@@ -320,28 +324,26 @@ export function initAuthListeners() {
     
     document.querySelectorAll('#btn-login-trigger').forEach(b => b.addEventListener('click', openModal));
     if (btnGetStarted) btnGetStarted.addEventListener('click', openModal);
+    
+    // Dashboard 按钮不需要专门的监听器，因为未登录不显示，已登录直接是链接跳转
+
     if (btnCancel) btnCancel.addEventListener('click', closeModal);
     if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
-    // 获取验证码
     if (btnGetCode) {
         btnGetCode.addEventListener('click', async () => {
             const email = inpEmail.value.trim();
             const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            
             if (!email) return showToast('请输入邮箱地址');
             if (!emailRegex.test(email)) return showToast('邮箱格式不正确');
-
             btnGetCode.disabled = true;
             btnGetCode.textContent = '发送中...';
-
             try {
                 const res = await fetch('/api/auth/send_code', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
                 });
-
                 if (res.ok) {
                     showToast('验证码已发送，请查收邮件');
                     let timeLeft = 60;
@@ -370,44 +372,31 @@ export function initAuthListeners() {
         });
     }
 
-    // 提交登录/注册
     if (btnSubmit) {
         btnSubmit.addEventListener('click', async () => {
             const u = inpUser.value.trim();
             const p = inpPass.value.trim();
-            
             if (!u || !p) return showToast('请输入账号密码');
-            
             try {
                 if (isRegisterMode) {
                     const email = inpEmail.value.trim();
                     const code = inpCode.value.trim();
-                    
                     if (!email) return showToast('请输入邮箱');
                     if (!code) return showToast('请输入验证码');
-
                     const res = await fetch('/api/register', { 
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            username: u, 
-                            password: p,
-                            email: email,
-                            code: code
-                        }) 
+                        body: JSON.stringify({ username: u, password: p, email: email, code: code }) 
                     });
-                    
                     if (!res.ok) {
                         const data = await res.json();
                         throw new Error(data.error || '注册失败');
                     }
-                    
                     const data = await res.json();
                     if (data.token) {
                         localStorage.setItem('mc_token', data.token);
                         localStorage.setItem('mc_username', u);
                         document.cookie = `mc_token=${data.token}; path=/; max-age=86400`;
-                        
                         closeModal();
                         showToast('注册并登录成功');
                         setTimeout(() => window.location.href = `/${u}/index.html`, 800);
@@ -423,7 +412,6 @@ export function initAuthListeners() {
                         localStorage.setItem('mc_token', data.token);
                         localStorage.setItem('mc_username', u);
                         document.cookie = `mc_token=${data.token}; path=/; max-age=86400`;
-                        
                         closeModal();
                         showToast('登录成功');
                         setTimeout(() => window.location.href = `/${u}/index.html`, 800);
@@ -433,7 +421,6 @@ export function initAuthListeners() {
         });
     }
 
-    // 修改密码
     if (settingsForm) {
         settingsForm.addEventListener('submit', async (e) => {
             e.preventDefault();

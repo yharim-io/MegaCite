@@ -4,7 +4,7 @@ from dao.factory import create_connection
 from dao.post_dao import MySQLPostDAO
 from dao.user_dao import MySQLUserDAO
 from dao.url_map_dao import MySQLUrlMapDAO
-from core.post import post_create, post_delete, post_get_full, post_update_content
+from core.post import post_create, post_delete, post_get_full, post_update_content, post_set_public
 from core.auth import verify_token
 from crawler.service import migrate_post_from_url
 from server.api.utils import send_json, send_error
@@ -23,10 +23,12 @@ def force_sync_post(server_gen, cid: str, user_id: int):
         date = post_dao.get_field(cid, "date")
         context = post_dao.get_field(cid, "context")
         desc = post_dao.get_field(cid, "description")
+        is_public = post_dao.get_field(cid, "is_public")
         
         post_data = {
             "cid": cid, "title": title, "category": category,
-            "date": str(date), "context": context, "description": desc
+            "date": str(date), "context": context, "description": desc,
+            "is_public": bool(is_public)
         }
         
         user_dao = MySQLUserDAO(conn)
@@ -36,6 +38,8 @@ def force_sync_post(server_gen, cid: str, user_id: int):
         print(f"[Sync] Force generating files for {cid}...")
         server_gen.sync_post_file(post_data, user.username)
         server_gen.sync_user_index(user_id)
+        # 强制同步广场
+        server_gen.sync_playground()
     finally:
         conn.close()
 
@@ -44,6 +48,7 @@ def force_sync_delete(server_gen, cid: str, user_id: int):
     print(f"[Sync] Force removing files for {cid}...")
     server_gen.remove_post_file(cid)
     server_gen.sync_user_index(user_id)
+    server_gen.sync_playground()
 
 def _get_token(handler):
     token = handler.headers.get('Authorization')
@@ -95,6 +100,23 @@ def handle_post_routes(handler, path: str, method: str, body_data: dict, server_
                         conn.close()
                     
                     send_json(handler, {'status': 'ok', 'url': target_url})
+                else:
+                    send_error(handler, "Update failed")
+            except Exception as e:
+                send_error(handler, str(e))
+            return True
+        
+        # [新增] 设置公开状态接口
+        elif path == '/api/post/set_public':
+            try:
+                token = _get_token(handler)
+                user_id = verify_token(token)
+                cid = body_data.get('cid')
+                is_public = body_data.get('is_public')
+                
+                if post_set_public(token, cid, is_public):
+                    force_sync_post(server_gen, cid, user_id)
+                    send_json(handler, {'status': 'ok'})
                 else:
                     send_error(handler, "Update failed")
             except Exception as e:

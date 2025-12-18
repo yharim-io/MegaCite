@@ -4,30 +4,195 @@
 
 /* Post Lists */
 .section { margin-bottom: 40px; }
-.post-section-title { font-size: 20px; font-weight: 600; color: var(--vp-c-text-1); margin: 0 0 16px; display: flex; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--vp-c-divider); }
+/* 去除标题下方的线条 */
+.post-section-title { 
+    font-size: 20px; 
+    font-weight: 600; 
+    color: var(--vp-c-text-1); 
+    margin: 0 0 16px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    padding-bottom: 12px; 
+    border-bottom: 1px solid var(--vp-c-divider); 
+}
 .post-section-title svg { stroke: var(--vp-c-brand); width: 20px; height: 20px; }
 .post-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 
-.post-item-container { position: relative; border: 1px solid var(--vp-c-border); background: var(--vp-c-bg); border-radius: 8px; transition: all 0.25s ease; height: 100%; overflow: hidden; }
+/* 基础卡片样式 */
+.post-item-container { 
+    position: relative; 
+    border: 1px solid var(--vp-c-border); 
+    background: var(--vp-c-bg); 
+    border-radius: 8px; 
+    transition: all 0.25s ease; 
+    height: 100%; 
+    overflow: hidden; 
+}
 .post-item-container:hover { border-color: var(--vp-c-brand); box-shadow: var(--shadow-2); transform: translateY(-2px); }
-.post-item-link { display: flex; flex-direction: column; justify-content: space-between; padding: 16px 20px; height: 100%; color: inherit; text-decoration: none; }
+
+.post-item-link { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    padding: 16px 20px; 
+    height: 100%; 
+    color: inherit; 
+    text-decoration: none; 
+    box-sizing: border-box;
+}
+
 .post-item-title { font-size: 16px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 12px; line-height: 1.4; padding-right: 20px; }
 .post-item-container:hover .post-item-title { color: var(--vp-c-brand); }
 .post-item-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--vp-c-text-3); }
 
-.btn-delete-post { position: absolute; top: 8px; right: 8px; background: transparent; border: none; color: var(--vp-c-text-3); cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s; }
-.btn-delete-post:hover { color: var(--color-danger); background: var(--color-danger-bg); }
+/* --- 样式 A: 控制台列表项 (Console Items) --- */
+/* 控制台文章保持原始大小和布局 */
+.console-item .post-item-controls {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
 
-/* Post Header */
+/* 确保 meta 信息不被遮挡 */
+.console-item .post-item-link {
+    padding-bottom: 32px; /* 底部留白给控件 */
+}
+
+/* --- 样式 B: 广场列表项 (Playground Items) --- */
+.post-item-container.playground-item {
+    height: 180px; /* 广场卡片较高 */
+    display: flex;
+    flex-direction: column;
+}
+
+.playground-item .post-item-link {
+    padding: 20px;
+    justify-content: flex-start;
+}
+
+.post-item-snippet {
+    font-size: 13px;
+    color: var(--vp-c-text-2);
+    line-height: 1.6;
+    margin-bottom: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    opacity: 0.85;
+    flex: 1;
+}
+
+.playground-item .post-item-meta {
+    margin-top: auto;
+    width: 100%;
+    padding-top: 12px;
+    border-top: 1px solid var(--vp-c-divider-light);
+}
+
+.post-item-author { 
+    font-size: 12px; 
+    color: var(--vp-c-brand); 
+    background: var(--vp-c-brand-soft); 
+    padding: 2px 8px; 
+    border-radius: 99px; 
+    font-weight: 500;
+}
+
+/* --- 通用控件样式 --- */
+.control-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.control-label {
+    font-size: 12px;
+    color: var(--vp-c-text-2);
+    user-select: none;
+}
+
+.list-switch {
+    transform: scale(0.8);
+    margin: 0;
+}
+
+/* 列表中的删除按钮 */
+.btn-delete-post.icon-only {
+    background: transparent;
+    border: none;
+    color: var(--vp-c-text-3);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: static; /* 覆盖原有的 absolute */
+}
+.btn-delete-post.icon-only:hover { color: var(--color-danger); background: var(--color-danger-bg); }
+
+/* 为了兼容详情页的旧 class (如果需要) */
+.btn-delete-post { 
+    /* 保持原有的 absolute 以防详情页或其他地方还在用，但在 console-item 中被 icon-only 覆盖 */
+}
+
+/* --- 文章详情页头部 --- */
 .post-header { margin-bottom: 32px; text-align: left; }
 .post-title { font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 16px; letter-spacing: -0.01em; }
-.post-meta-row { display: flex; align-items: center; gap: 24px; font-size: 14px; color: var(--vp-c-text-2); }
+
+.post-meta-row { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    font-size: 14px; 
+    color: var(--vp-c-text-2); 
+}
+
+.meta-group { display: flex; align-items: center; gap: 24px; }
 .meta-item { display: flex; align-items: center; gap: 6px; font-weight: 500; }
 .meta-icon { width: 16px; height: 16px; opacity: 0.6; }
 .meta-item a { color: var(--vp-c-brand); border-bottom: 1px solid transparent; transition: 0.2s; }
 .meta-item a:hover { border-bottom-color: var(--vp-c-brand); }
-.btn-edit-post { padding: 4px 8px; font-size: 12px; color: var(--vp-c-brand); background: var(--vp-c-brand-soft); border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; border: none; }
+
+.controls-group { display: flex; align-items: center; gap: 12px; }
+
+.btn-edit-post, .btn-delete-post-page { 
+    padding: 4px 8px; 
+    font-size: 12px; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    text-decoration: none; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 4px; 
+    transition: all 0.2s; 
+    border: none; 
+}
+
+.btn-edit-post { color: var(--vp-c-brand); background: var(--vp-c-brand-soft); }
 .btn-edit-post:hover { background: var(--vp-c-brand); color: white; }
+
+.btn-delete-post-page { color: var(--color-danger); background: var(--color-danger-bg); }
+.btn-delete-post-page:hover { background: var(--color-danger); color: white; }
+
+/* Switch Toggle (通用) */
+.switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: var(--color-success); }
+input:focus + .slider { box-shadow: 0 0 1px var(--color-success); }
+input:checked + .slider:before { transform: translateX(16px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
 
 /* Markdown Content */
 .post-content { font-size: 16px; line-height: 1.7; color: var(--vp-c-text-1); }
@@ -45,7 +210,9 @@
 .post-content pre code { background: none; padding: 0; color: inherit; }
 
 .custom-block { margin: 20px 0; padding: 12px 16px; border-radius: 6px; background: var(--vp-c-bg-soft); border: 1px solid var(--vp-c-border); font-size: 14px; color: var(--vp-c-text-2); }
-.custom-block-title { font-weight: 600; margin-top: 0; margin-bottom: 6px; color: var(--vp-c-text-1); font-size: 12px; }
-
+.custom-block-title { font-weight: 600; color: var(--vp-c-text-1); font-size: 12px; }
 .custom-block > :first-child, blockquote > :first-child { margin-top: 0; }
 .custom-block > :last-child, blockquote > :last-child { margin-bottom: 0; }
+
+/* 强制隐藏用户列表页的头部线条 */
+.dashboard-header, .page-header { border-bottom: none !important; }

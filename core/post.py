@@ -44,20 +44,28 @@ def post_list(token: str, count: int | None = None) -> list[str]:
     finally:
         conn.close()
 
+def get_playground_posts() -> list[dict]:
+    """获取所有公开文章"""
+    conn = create_connection()
+    try:
+        dao = MySQLPostDAO(conn)
+        return dao.list_public_posts()
+    finally:
+        conn.close()
+
 def post_create(token: str) -> str:
     user_id = verify_token(token)
     new_cid = generate_cid()
     
-    # 自动生成唯一默认标题: Untitled-{CID}
     default_title = f"Untitled-{new_cid}"
     default_cat = "Default"
     
     conn = create_connection()
     try:
         dao = MySQLPostDAO(conn)
+        # 默认私有
         dao.create_post(owner_id=user_id, cid=new_cid, title=default_title, category=default_cat, date=None)
         
-        # 立即更新映射表
         _update_url_mapping(conn, new_cid)
         
         return new_cid
@@ -71,7 +79,6 @@ def post_get_full(token: str, cid: str) -> dict:
     try:
         dao = MySQLPostDAO(conn)
         
-        # 检查所有权
         owner_id = dao.get_field(cid, "owner_id")
         if owner_id != user_id:
             raise PermissionError("Access denied")
@@ -79,41 +86,50 @@ def post_get_full(token: str, cid: str) -> dict:
         title = dao.get_field(cid, "title")
         category = dao.get_field(cid, "category")
         context = dao.get_field(cid, "context")
-        description = dao.get_field(cid, "description") # [新增] 获取摘要
+        description = dao.get_field(cid, "description")
+        is_public = dao.get_field(cid, "is_public")
         
         return {
             "cid": cid,
             "title": title,
             "category": category,
             "context": context,
-            "description": description
+            "description": description,
+            "is_public": bool(is_public)
         }
     finally:
         conn.close()
 
-def post_update_content(token: str, cid: str, title: str, category: str, context: str, description: str) -> bool:
-    """
-    [新增] 同时更新文章的标题、分类、内容和摘要。
-    处理冲突逻辑。
-    """
+def post_set_public(token: str, cid: str, is_public: bool) -> bool:
+    """设置文章公开状态"""
     user_id = verify_token(token)
     conn = create_connection()
     try:
         dao = MySQLPostDAO(conn)
         
-        # 检查所有权
+        owner_id = dao.get_field(cid, "owner_id")
+        if owner_id != user_id:
+            raise PermissionError("Access denied")
+            
+        return dao.update_field(cid, "is_public", int(is_public))
+    finally:
+        conn.close()
+
+def post_update_content(token: str, cid: str, title: str, category: str, context: str, description: str) -> bool:
+    user_id = verify_token(token)
+    conn = create_connection()
+    try:
+        dao = MySQLPostDAO(conn)
+        
         owner_id = dao.get_field(cid, "owner_id")
         if owner_id != user_id:
             raise PermissionError("Access denied")
 
-        # 尝试更新
         target_title = title
         target_cat = category
         resolved = False
         
-        # 循环尝试解决标题冲突
         while True:
-            # 解析当前尝试的标题，检查是否已有 (n) 后缀
             match = re.search(r" \(([1-9]\d*)\)$", target_title)
             if match:
                 n = int(match.group(1))
@@ -126,12 +142,11 @@ def post_update_content(token: str, cid: str, title: str, category: str, context
                     title=target_title, 
                     category=target_cat, 
                     context=context,
-                    description=description # [新增] 更新摘要
+                    description=description
                 )
                 resolved = True
                 break
             except pymysql.err.IntegrityError:
-                # 冲突，给标题加后缀重试
                 if not match:
                     target_title = f"{target_title} (1)"
                 continue
@@ -150,10 +165,8 @@ def post_update(token: str, cid: str, field: str, value: str) -> bool:
         dao = MySQLPostDAO(conn)
         
         try:
-            # 尝试正常更新
             result = dao.update_field(cid, field, value)
         except pymysql.err.IntegrityError:
-            # [冲突解决策略]
             current_title = dao.get_field(cid, "title")
             current_cat = dao.get_field(cid, "category")
             
@@ -162,7 +175,6 @@ def post_update(token: str, cid: str, field: str, value: str) -> bool:
             
             print(f"[Conflict] Collision detected for '{target_title}' in '{target_cat}'. Auto-resolving...")
 
-            # 循环尝试生成不冲突的标题
             resolved = False
             
             while True:
@@ -190,7 +202,6 @@ def post_update(token: str, cid: str, field: str, value: str) -> bool:
             
             result = resolved
         
-        # 只要修改了 title 或 category，就需要重新生成 URL
         if result and field in ("title", "category"):
             _update_url_mapping(conn, cid)
                 
@@ -204,10 +215,9 @@ def post_delete(token: str, cid: str) -> bool:
     try:
         dao = MySQLPostDAO(conn)
         
-        # [安全增强] 检查所有权
         owner_id = dao.get_field(cid, "owner_id")
         if owner_id is None:
-            return False # 文章不存在
+            return False
         
         if owner_id != user_id:
             raise PermissionError("You do not own this post.")

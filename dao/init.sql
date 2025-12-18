@@ -23,7 +23,6 @@ CREATE TABLE auth_platforms (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     platform VARCHAR(50) NOT NULL,
-    -- [修复] Cookie 数据极大，VARCHAR(255) 必定报错，改为 LONGTEXT
     credential LONGTEXT DEFAULT NULL,
     UNIQUE KEY ux_user_platform (user_id, platform),
     CONSTRAINT fk_auth_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -38,8 +37,8 @@ CREATE TABLE posts (
     description TEXT,
     category VARCHAR(255) NOT NULL DEFAULT 'default',
     date DATE NOT NULL,
+    is_public BOOLEAN NOT NULL DEFAULT FALSE,
     -- 确保同一个用户在同一个 category 下的 title 不重复
-    -- 现在的 URL 结构是 username/category/title，因此需要这个联合唯一约束
     UNIQUE KEY ux_owner_category_title (owner_id, category, title),
     CONSTRAINT fk_post_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
