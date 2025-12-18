@@ -1,0 +1,42 @@
+/* * variables.css
+ * 全局变量定义
+ */
+
+/* 字体引入 */
+@font-face { font-family: 'Roboto'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-weight: 500; src: url('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-weight: 700; src: url('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto Mono'; src: url('https://cdn.jsdelivr.net/npm/@fontsource/roboto-mono@5.0.8/files/roboto-mono-latin-400-normal.woff2') format('woff2'); }
+
+:root {
+  --vp-c-bg: #ffffff; 
+  --vp-c-bg-soft: #f9f9fa; 
+  --vp-c-bg-mute: #f1f1f2;
+  
+  --vp-c-brand: #3451b2; 
+  --vp-c-brand-light: #4f6bed; 
+  --vp-c-brand-dark: #263a85; 
+  --vp-c-brand-soft: rgba(52, 81, 178, 0.1);
+  
+  --vp-c-text-1: #2c3e50; 
+  --vp-c-text-2: #4e5969; 
+  --vp-c-text-3: #86909c;
+  
+  --vp-c-divider: #e5e6eb; 
+  --vp-c-border: #f2f3f5;
+  
+  --vp-font-family: "Roboto", sans-serif; 
+  --vp-font-family-mono: "Roboto Mono", monospace;
+  
+  --vp-nav-height: 64px; 
+  --vp-layout-max-width: 1200px;
+  
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04); 
+  --shadow-2: 0 4px 10px rgba(0, 0, 0, 0.05); 
+  --shadow-3: 0 8px 30px rgba(0, 0, 0, 0.08);
+  
+  --color-success: #10b981; 
+  --color-success-hover: #059669; 
+  --color-danger: #ef4444; 
+  --color-danger-bg: #fef2f2;
+}

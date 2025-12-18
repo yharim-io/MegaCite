@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {meta_extra}
+    <title>{page_title}</title>
+    <link href="/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="layout">
+        <header class="VPNav">
+            <div class="VPNavBar">
+                <a href="/" class="title-container">
+                    <img src="/logo.svg" alt="M" class="logo">
+                    <span>MegaCite</span>
+                </a>
+                <nav class="nav-group">
+                    <span id="auth-guest">
+                        <span class="nav-link" id="btn-login-trigger">登录</span>
+                    </span>
+                    <span id="auth-user" style="display:none; gap: 20px; align-items: center;">
+                        <a href="#" id="link-my-home" class="nav-link {nav_console_active}">控制台</a>
+                        <a href="/settings.html" class="nav-link {nav_settings_active}">设置</a>
+                        <span id="username-display" class="nav-text"></span>
+                        <a href="#" id="btn-logout" class="nav-link">退出</a>
+                    </span>
+                </nav>
+            </div>
+        </header>
+
+        {content}
+
+        <footer class="VPFooter">
+            © 2025 MegaCite Project. Released under the Apache-2.0 License.
+        </footer>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-tabs">
+                <div class="modal-tab active" id="tab-login">登录</div>
+                <div class="modal-tab" id="tab-register">注册</div>
+            </div>
+            <div class="modal-inner">
+                <input id="inp-username" type="text" class="form-input" placeholder="用户名" autocomplete="off">
+                <div class="password-wrapper">
+                    <input id="inp-password" type="password" class="form-input" placeholder="密码">
+                    <span class="password-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    </span>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                    <button id="btn-submit-auth" class="btn-action primary" style="flex:1;">立即登录</button>
+                    <button id="btn-cancel-login" class="btn-action cancel" style="flex:1; margin: 0;">暂不登录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {modal_extra}
+
+    <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<main class="container">
+    <div style="margin-bottom: 60px; padding-bottom: 10px; border-bottom: 1px solid var(--vp-c-divider); display: flex; justify-content: space-between; align-items: end;">
+        <div>
+            <h1 style="font-size: 32px; font-weight: 800; color: var(--vp-c-text-1); margin: 0; line-height: 1.2;">{username}</h1>
+        </div>
+        <div id="dashboard-actions" style="display: none; gap: 12px;">
+            <button id="btn-create-post" class="btn-action primary">创建文章</button>
+            <button id="btn-migrate-trigger" class="btn-action success">迁移文章</button>
+        </div>
+    </div>
+
+    {content_list}
+</main>
+
+<!-- Migrate Modal (Dashboard Only) -->
+<div id="migrate-modal" class="modal-overlay">
+    <div class="modal-box" style="width: 500px;">
+        <div style="padding: 24px;">
+            <h3 style="margin-top: 0; margin-bottom: 20px;">迁移外部文章</h3>
+            <div id="migrate-input-area">
+                <p style="font-size: 14px; color: var(--vp-c-text-2); margin-bottom: 12px;">
+                    请输入目标文章链接（支持 CSDN, 稀土掘金, 简书, 博客园, 语雀）：
+                </p>
+                <input id="inp-migrate-url" type="text" class="form-input" placeholder="https://..." style="margin-bottom: 20px;">
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-start-migrate" class="btn-action primary" style="flex:1;">开始迁移</button>
+                    <button id="btn-cancel-migrate" class="btn-action cancel" style="flex:1;">取消</button>
+                </div>
+            </div>
+            <div id="migrate-progress-area" style="display: none;">
+                <p style="font-weight: 600; font-size: 14px; margin-bottom: 10px;">正在处理...</p>
+                <div id="migrate-logs" style="background: #1e1e1e; color: #a9b7c6; font-family: monospace; font-size: 12px; padding: 12px; height: 150px; overflow-y: auto; border-radius: 6px; margin-bottom: 16px;"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-close-migrate" class="btn-action primary" style="display: none; flex: 1;" onclick="location.reload()">完成并刷新</button>
+                    <button id="btn-stop-migrate" class="btn-action cancel" style="flex: 1;">停止</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal (Dashboard Only) -->
+<div id="delete-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div style="padding: 24px; text-align: center;">
+            <div style="color: var(--color-danger); margin-bottom: 16px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            </div>
+            <h3 style="margin-top: 0; margin-bottom: 12px;">确定要删除吗？</h3>
+            <p style="color: var(--vp-c-text-2); font-size: 14px; margin-bottom: 24px;">此操作将永久删除该文章，无法恢复。</p>
+            <div style="display: flex; gap: 12px;">
+                <button id="btn-confirm-delete" class="btn-action cancel" style="flex:1; background-color: var(--color-danger); color: white;">确认删除</button>
+                <button id="btn-cancel-delete" class="btn-action" style="flex:1; border: 1px solid var(--vp-c-divider);">取消</button>
+            </div>
+        </div>
+    </div>
+</div>

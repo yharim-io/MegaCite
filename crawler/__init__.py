@@ -1,0 +1,1 @@
+from .service import migrate_post_from_url

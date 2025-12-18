@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑器 - MegaCite</title>
+    <link href="/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+    <div class="layout" style="height: 100vh; overflow: hidden; background-color: var(--vp-c-bg);">
+        <header class="VPNav">
+            <div class="VPNavBar">
+                <div class="title-container disabled">
+                    <img src="/logo.svg" alt="M" class="logo">
+                    <span>MegaCite Editor</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-back" class="btn-action cancel">返回</button>
+                    <button id="btn-save" class="btn-action primary">保存文章</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="editor-layout">
+            <div class="editor-toolbar">
+                <div class="toolbar-group" style="flex: 1;">
+                    <span class="toolbar-label">标题：</span>
+                    <input id="edit-title" class="editor-input title" type="text" placeholder="输入文章标题">
+                </div>
+                <div class="toolbar-group" style="flex: 1;">
+                    <span class="toolbar-label">摘要：</span>
+                    <input id="edit-description" class="editor-input" type="text" placeholder="文章摘要">
+                </div>
+                <div class="toolbar-group" style="flex: 0 0 200px;"> 
+                    <span class="toolbar-label">分类：</span>
+                    <div id="category-container" style="flex: 1; display: flex;">
+                        <select id="edit-category-select" class="editor-input category">
+                            <option value="Default">Default</option>
+                            <option value="__NEW__">+ 新建分类...</option>
+                        </select>
+                        <input id="edit-category-input" class="editor-input category" type="text" placeholder="输入新分类名称" style="display: none;">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="editor-main">
+                <div class="editor-block">
+                    <div id="monaco-container"></div>
+                </div>
+                <div class="editor-block">
+                    <div id="edit-preview" class="post-content preview-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container"></div>
+    <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+/* * base.css
+ * 基础重置与全局样式
+ */
+
+*, ::before, ::after { box-sizing: border-box; }
+
+body { 
+  margin: 0; 
+  font-family: var(--vp-font-family); 
+  font-size: 16px; 
+  line-height: 1.6; 
+  color: var(--vp-c-text-1); 
+  background-color: var(--vp-c-bg); 
+}
+
+a { 
+  text-decoration: none; 
+  color: inherit; 
+  transition: color 0.2s ease; 
+}
+
+button, input, select { 
+  font-family: inherit; 
+}
