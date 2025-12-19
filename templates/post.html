@@ -49,6 +49,29 @@
         <div class="post-content">
             {content_body}
         </div>
+        
+        <!-- 交互区域 -->
+        <div id="interaction-section" class="interaction-container">
+            <div class="like-section">
+                <button id="btn-like" class="btn-like">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    <span id="like-count">0</span>
+                </button>
+            </div>
+            
+            <div class="comment-section">
+                <h3>评论 <span id="comment-count" style="color: var(--vp-c-text-2);">(0)</span></h3>
+                
+                <div id="comment-input-area" class="comment-form" style="display:none;">
+                    <textarea id="inp-comment" placeholder="写下你的评论..." rows="3"></textarea>
+                    <button id="btn-submit-comment" class="btn-action primary small">发布</button>
+                </div>
+                
+                <div id="comment-list" class="comment-list">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </div>
     </article>
 </main>
 

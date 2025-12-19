@@ -14,6 +14,7 @@ from verification import manager as verify_manager
 # 导入新的 Handler
 from server.api.auth_handler import handle_auth_routes
 from server.api.post_handler import handle_post_routes
+from server.api.handlers.interact import handle_interact_routes
 
 PID_FILE = "server.pid"
 WEB_ROOT = "public"
@@ -76,6 +77,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # 路由分发
         if handle_auth_routes(self, self.path, "GET", {}, SERVER_GEN): return
         if handle_post_routes(self, self.path, "GET", {}, SERVER_GEN): return
+        if handle_interact_routes(self, self.path, "GET", {}, SERVER_GEN): return
         
         super().do_GET()
 
@@ -89,6 +91,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             # 路由分发
             if handle_auth_routes(self, self.path, "POST", data, SERVER_GEN): return
             if handle_post_routes(self, self.path, "POST", data, SERVER_GEN): return
+            if handle_interact_routes(self, self.path, "POST", data, SERVER_GEN): return
             
             self.send_error(404, "API Not Found")
         except Exception as e:

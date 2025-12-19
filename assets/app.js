@@ -6,6 +6,7 @@ import { checkPendingToast } from './js/utils.js';
 import { updateAuthUI, initAuthListeners, checkTokenValidity } from './js/auth.js';
 import { initPostListeners } from './js/post.js';
 import { initEditor } from './js/editor.js';
+import { initInteractListeners } from './js/interact.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. 检查并显示挂起的消息
@@ -24,4 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. 初始化编辑器 (如果存在)
     initEditor();
+    
+    // 6. 初始化交互模块 (点赞/评论)
+    initInteractListeners();
 });

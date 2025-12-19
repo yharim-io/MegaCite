@@ -3,6 +3,16 @@
  * 通用工具函数模块
  */
 
+export function escapeHtml(text) {
+    if (!text) return "";
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 // 显示 Toast 提示
 export function showToast(message) {
     let container = document.querySelector('.toast-container');

@@ -4,6 +4,8 @@ CREATE DATABASE IF NOT EXISTS `megacite` DEFAULT CHARACTER SET = utf8mb4 COLLATE
 USE `megacite`;
 
 -- 为避免重复执行报错，先删除可能已存在的表（按外键依赖顺序）
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS likes;
 DROP TABLE IF EXISTS url_mappings;
 DROP TABLE IF EXISTS post_references;
 DROP TABLE IF EXISTS posts;
@@ -59,6 +61,26 @@ CREATE TABLE url_mappings (
     UNIQUE KEY ux_cid (cid),
     UNIQUE KEY ux_url_path (url_path),
     CONSTRAINT fk_map_cid FOREIGN KEY (cid) REFERENCES posts(cid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE likes (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    post_cid VARCHAR(32) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY ux_user_post_like (user_id, post_cid),
+    CONSTRAINT fk_like_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_like_post FOREIGN KEY (post_cid) REFERENCES posts(cid) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE comments (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    post_cid VARCHAR(32) NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_comment_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_post FOREIGN KEY (post_cid) REFERENCES posts(cid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER USER 'root'@'localhost' IDENTIFIED BY '114514';

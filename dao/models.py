@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 
 @dataclass
 class User:
@@ -21,3 +21,19 @@ class Post:
     category: str | None
     date: date
     is_public: bool = False
+
+@dataclass
+class Like:
+    id: int
+    user_id: int
+    post_cid: str
+    created_at: datetime
+
+@dataclass
+class Comment:
+    id: int
+    user_id: int
+    post_cid: str
+    content: str
+    created_at: datetime
+    username: str = ""  # 视图字段，非数据库原生字段

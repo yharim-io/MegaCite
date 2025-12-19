@@ -1,5 +1,7 @@
 from datetime import datetime
 import pymysql.connections
+from dao.factory import create_connection
+from dao.models import Post
 
 class MySQLPostDAO:
     """MySQL 实现的 PostDAO。"""
@@ -84,7 +86,6 @@ class MySQLPostDAO:
 
     def list_public_posts(self) -> list[dict]:
         """获取所有公开的文章，包含作者信息和内容摘要"""
-        # 使用 LEFT(context, 200) 获取前200字符作为摘要基础，后续在 Python 中处理
         sql = """
             SELECT p.cid, p.title, p.category, p.date, p.description, u.username, LEFT(p.context, 200)
             FROM posts p
@@ -104,11 +105,11 @@ class MySQLPostDAO:
                 "date": str(r[3]),
                 "description": r[4],
                 "author": r[5],
-                "snippet": r[6]  # 新增摘要字段
+                "snippet": r[6]
             }
             for r in rows
         ]
-
+    
     def search_posts(self, keyword: str) -> list[str]:
         like = f"%{keyword}%"
         results: list[str] = []
@@ -139,29 +140,16 @@ class MySQLPostDAO:
         return results
 
     def search_public_posts_paged(self, keyword: str, offset: int, limit: int) -> tuple[list[dict], int]:
-        """
-        搜索公开文章并分页。
-        如果 keyword 为 None 或空字符串，则返回所有公开文章。
-        返回: (posts_list, total_count)
-        """
         params = []
         where_clause = "WHERE p.is_public = TRUE"
         
         if keyword:
-            # 模糊匹配 title, context, description
             where_clause += " AND (p.title LIKE %s OR p.context LIKE %s OR p.description LIKE %s)"
             like_kw = f"%{keyword}%"
             params.extend([like_kw, like_kw, like_kw])
             
-        # 1. 获取总数
-        count_sql = f"""
-            SELECT COUNT(*) 
-            FROM posts p 
-            {where_clause}
-        """
+        count_sql = f"SELECT COUNT(*) FROM posts p {where_clause}"
         
-        # 2. 获取分页数据
-        # 注意：我们需要获取 context 以生成高亮摘要
         data_sql = f"""
             SELECT p.cid, p.title, p.category, p.date, p.description, u.username, p.context
             FROM posts p
@@ -175,7 +163,6 @@ class MySQLPostDAO:
             cur.execute(count_sql, tuple(params))
             total = cur.fetchone()[0]
             
-            # 只有在有数据时才查询详情
             if total > 0:
                 full_params = params + [limit, offset]
                 cur.execute(data_sql, tuple(full_params))
@@ -191,7 +178,7 @@ class MySQLPostDAO:
                 "date": str(r[3]),
                 "description": r[4],
                 "author": r[5],
-                "context": r[6]  # 完整内容，用于后端截取高亮
+                "context": r[6]
             }
             for r in rows
         ]
@@ -199,8 +186,32 @@ class MySQLPostDAO:
         return posts, total
 
     def get_user_categories(self, user_id: int) -> list[str]:
-        """获取指定用户的分类列表"""
         with self.conn.cursor() as cur:
             cur.execute("SELECT DISTINCT category FROM posts WHERE owner_id = %s ORDER BY category", (user_id,))
             rows = cur.fetchall()
         return [r[0] for r in rows] if rows else []
+
+    def get_post_by_cid(self, cid: str) -> Post:
+        """获取单个文章对象 (兼容 Interact Handler)"""
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT cid, owner_id, title, context, description, category, date, is_public FROM posts WHERE cid=%s", (cid,))
+            row = cur.fetchone()
+        
+        if not row:
+            return None
+            
+        return Post(
+            cid=row[0],
+            owner_id=row[1],
+            title=row[2],
+            context=row[3],
+            description=row[4],
+            category=row[5],
+            date=row[6],
+            is_public=bool(row[7])
+        )
+
+# 辅助函数：获取 DAO 实例
+def get_post_dao():
+    conn = create_connection()
+    return MySQLPostDAO(conn)

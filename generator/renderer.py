@@ -4,6 +4,7 @@ import re
 from core.url_manager import URLManager
 from generator.markdown_extensions import CiteReferenceExtension
 from generator.content_updater import update_post_content_in_db, update_post_references_in_db
+from dao import interact_dao
 
 class HTMLRenderer:
     """渲染 HTML 内容 - VitePress 风格"""
@@ -90,6 +91,16 @@ class HTMLRenderer:
         return """..."""
 
     def render_user_index(self, username: str, categorized_posts: dict) -> str:
+        # 使用 username 直接查询统计，增加容错保护
+        total_likes = 0
+        total_comments = 0
+        try:
+            total_likes = interact_dao.count_total_likes_for_username(username)
+            total_comments = interact_dao.count_total_comments_for_username(username)
+        except Exception as e:
+            print(f"[-] Error fetching stats for {username}: {e}")
+            # 出错时不中断渲染，默认显示 0
+
         parts = []
         for category in sorted(categorized_posts.keys()):
             posts = categorized_posts[category]
@@ -97,14 +108,30 @@ class HTMLRenderer:
             for p in posts:
                 is_public_checked = "checked" if p.get('is_public') else ""
                 
-                # [修复] 这里的类名改为 post-item-controls 必须与 auth.js 一致
-                # 添加 console-item 类以区分样式
+                # 获取单篇文章的统计数据 (初始值)
+                p_likes = 0
+                p_comments = 0
+                try:
+                    p_likes = interact_dao.count_likes_for_post(p['cid'])
+                    p_comments = interact_dao.count_comments_for_post(p['cid'])
+                except Exception:
+                    pass
+
+                # 添加 data-cid 和 data-type 属性，以便 JS 动态更新
                 item_html = f"""
                 <div class="post-item-container console-item">
                     <a href="{p['filename']}" class="post-item-link">
                         <div class="post-item-title">{p['title']}</div>
                         <div class="post-item-meta">
                             <span>{p['date']}</span>
+                            <span class="meta-stat" data-cid="{p['cid']}" data-type="like">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                {p_likes}
+                            </span>
+                            <span class="meta-stat" data-cid="{p['cid']}" data-type="comment">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                {p_comments}
+                            </span>
                         </div>
                     </a>
                     
@@ -143,7 +170,9 @@ class HTMLRenderer:
 
         fragment_html = self.template_index.format(
             username=username,
-            content_list=content_list_html
+            content_list=content_list_html,
+            total_likes=total_likes,
+            total_comments=total_comments
         )
 
         return self._render_full(
@@ -167,7 +196,16 @@ class HTMLRenderer:
             if not clean_snippet.strip():
                 clean_snippet = "暂无预览"
 
-            # 添加 playground-item 类
+            # 统计数据 (初始值)
+            p_likes = 0
+            p_comments = 0
+            try:
+                p_likes = interact_dao.count_likes_for_post(p['cid'])
+                p_comments = interact_dao.count_comments_for_post(p['cid'])
+            except Exception:
+                pass
+
+            # 添加 playground-item 类，以及 data-cid, data-type
             item_html = f"""
             <div class="post-item-container playground-item">
                 <a href="{filename}" class="post-item-link">
@@ -176,6 +214,14 @@ class HTMLRenderer:
                     <div class="post-item-meta">
                         <span class="post-item-author">{p['author']}</span>
                         <span>{p['date']}</span>
+                        <span class="meta-stat" data-cid="{p['cid']}" data-type="like">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                            {p_likes}
+                        </span>
+                        <span class="meta-stat" data-cid="{p['cid']}" data-type="comment">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            {p_comments}
+                        </span>
                     </div>
                 </a>
             </div>
@@ -184,7 +230,6 @@ class HTMLRenderer:
             
         list_html = f'<div class="post-list">{"".join(items)}</div>' if items else "<p style='text-align:center;color:var(--vp-c-text-3)'>暂无公开内容</p>"
         
-        # [Fix] 增加 search_query="" 参数，以满足模板对 {search_query} 的需求
         fragment_html = self.template_playground.format(content_list=list_html, search_query="")
         
         return self._render_full(

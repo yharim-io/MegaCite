@@ -42,9 +42,9 @@
     box-sizing: border-box;
 }
 
-.post-item-title { font-size: 16px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 12px; line-height: 1.4; padding-right: 20px; }
+.post-item-title { font-size: 16px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 18px; line-height: 1.4; padding-right: 20px; }
 .post-item-container:hover .post-item-title { color: var(--vp-c-brand); }
-.post-item-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--vp-c-text-3); }
+.post-item-meta { display: flex; justify-content: flex-start; gap: 12px; align-items: center; font-size: 13px; color: var(--vp-c-text-3); }
 
 /* --- 样式 A: 控制台列表项 (Console Items) --- */
 /* 控制台文章保持原始大小和布局 */
@@ -56,11 +56,6 @@
     align-items: center;
     gap: 8px;
     z-index: 10;
-}
-
-/* 确保 meta 信息不被遮挡 */
-.console-item .post-item-link {
-    padding-bottom: 32px; /* 底部留白给控件 */
 }
 
 /* --- 样式 B: 广场列表项 (Playground Items) --- */
@@ -139,11 +134,6 @@
 }
 .btn-delete-post.icon-only:hover { color: var(--color-danger); background: var(--color-danger-bg); }
 
-/* 为了兼容详情页的旧 class (如果需要) */
-.btn-delete-post { 
-    /* 保持原有的 absolute 以防详情页或其他地方还在用，但在 console-item 中被 icon-only 覆盖 */
-}
-
 /* --- 文章详情页头部 --- */
 .post-header { margin-bottom: 32px; text-align: left; }
 .post-title { font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 16px; letter-spacing: -0.01em; }
@@ -211,8 +201,177 @@ input:checked + .slider:before { transform: translateX(16px); }
 
 .custom-block { margin: 20px 0; padding: 12px 16px; border-radius: 6px; background: var(--vp-c-bg-soft); border: 1px solid var(--vp-c-border); font-size: 14px; color: var(--vp-c-text-2); }
 .custom-block-title { font-weight: 600; color: var(--vp-c-text-1); font-size: 12px; }
-.custom-block > :first-child, blockquote > :first-child { margin-top: 0; }
-.custom-block > :last-child, blockquote > :last-child { margin-bottom: 0; }
+.custom-block > :first-child, blockquote > :first-child { margin-top: 0 !important; }
+.custom-block > :last-child, blockquote > :last-child { margin-bottom: 0 !important; }
 
-/* 强制隐藏用户列表页的头部线条 */
-.dashboard-header, .page-header { border-bottom: none !important; }
+/* Interaction Section */
+.interaction-container {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--vp-c-divider);
+}
+
+.like-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 3rem;
+}
+
+.btn-like {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 1px solid var(--vp-c-divider);
+    background-color: var(--vp-c-bg);
+    color: var(--vp-c-text-2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.btn-like svg {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 4px;
+    stroke-width: 1.5;
+    transition: all 0.3s ease;
+}
+
+.btn-like span {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.btn-like:hover {
+    background-color: var(--vp-c-bg-mute);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.btn-like.active {
+    border-color: var(--vp-c-brand);
+    color: var(--vp-c-brand);
+}
+
+.btn-like.active svg {
+    fill: var(--vp-c-brand);
+    stroke: var(--vp-c-brand);
+}
+
+/* Comment Section */
+.comment-section h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.comment-form {
+    background-color: var(--vp-c-bg-soft);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+}
+
+.comment-form textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 8px;
+    background-color: var(--vp-c-bg);
+    color: var(--vp-c-text-1);
+    resize: vertical;
+    font-family: inherit;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+}
+
+.comment-form textarea:focus {
+    outline: none;
+    border-color: var(--vp-c-brand);
+}
+
+.btn-action.small {
+    padding: 6px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--vp-c-brand);
+    color: white;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.btn-action.small:hover {
+    background-color: var(--vp-c-brand-dark);
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.comment-item {
+    border-bottom: 1px solid var(--vp-c-divider);
+    padding-bottom: 1.5rem;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.comment-user {
+    font-weight: 600;
+    color: var(--vp-c-text-1);
+}
+
+.comment-date {
+    color: var(--vp-c-text-3);
+    margin-left: 10px;
+}
+
+.comment-delete {
+    color: var(--vp-c-text-3);
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-left: auto; /* Push to right */
+    padding: 2px 12px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.comment-delete:hover {
+    color: #ef4444; /* Red */
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+.comment-body {
+    color: var(--vp-c-text-2);
+    line-height: 1.6;
+    white-space: pre-wrap; /* Preserve line breaks */
+}
+
+.no-comments {
+    text-align: center;
+    padding: 2rem;
+    color: var(--vp-c-text-3);
+    background-color: var(--vp-c-bg-soft);
+    border-radius: 8px;
+}
