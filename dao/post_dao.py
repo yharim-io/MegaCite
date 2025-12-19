@@ -138,8 +138,9 @@ class MySQLPostDAO:
 
         return results
 
-    def get_all_categories(self) -> list[str]:
+    def get_user_categories(self, user_id: int) -> list[str]:
+        """获取指定用户的分类列表"""
         with self.conn.cursor() as cur:
-            cur.execute("SELECT DISTINCT category FROM posts ORDER BY category")
+            cur.execute("SELECT DISTINCT category FROM posts WHERE owner_id = %s ORDER BY category", (user_id,))
             rows = cur.fetchall()
         return [r[0] for r in rows] if rows else []

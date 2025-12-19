@@ -193,10 +193,15 @@ def handle_post_routes(handler, path: str, method: str, body_data: dict, server_
 
         elif parsed.path == '/api/categories':
             try:
+                token = _get_token(handler)
+                user_id = verify_token(token)  # 验证用户，实现隔离
+                
                 conn = create_connection()
-                dao = MySQLPostDAO(conn)
-                cats = dao.get_all_categories()
-                conn.close()
+                try:
+                    dao = MySQLPostDAO(conn)
+                    cats = dao.get_user_categories(user_id) # 获取当前用户的分类
+                finally:
+                    conn.close()
                 send_json(handler, {'categories': cats})
             except Exception as e:
                 send_error(handler, str(e))
