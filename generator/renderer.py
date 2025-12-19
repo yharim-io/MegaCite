@@ -184,7 +184,8 @@ class HTMLRenderer:
             
         list_html = f'<div class="post-list">{"".join(items)}</div>' if items else "<p style='text-align:center;color:var(--vp-c-text-3)'>暂无公开内容</p>"
         
-        fragment_html = self.template_playground.format(content_list=list_html)
+        # [Fix] 增加 search_query="" 参数，以满足模板对 {search_query} 的需求
+        fragment_html = self.template_playground.format(content_list=list_html, search_query="")
         
         return self._render_full(
             content=fragment_html,

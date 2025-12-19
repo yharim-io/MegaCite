@@ -1,7 +1,41 @@
 <main class="container">
-    <div style="margin-bottom: 60px; padding-bottom: 20px; border-bottom: 1px solid var(--vp-c-divider); text-align: center;">
+    <div style="margin-bottom: 36px; text-align: center;">
         <h1 style="font-size: 32px; font-weight: 800; color: var(--vp-c-text-1); margin: 0; line-height: 1.2;">广场</h1>
         <p style="color: var(--vp-c-text-2); margin-top: 10px;">探索所有用户公开的知识</p>
+    </div>
+
+    <!-- 搜索条区域，形状参考 Google 圆角矩形 -->
+    <div class="search-section" style="display: flex; justify-content: center; margin-bottom: 40px;">
+        <!-- [Fix] action 改为 /playground.html 以解决资源加载路径问题 -->
+        <form action="/playground.html" method="get" class="search-form" style="width: 100%; max-width: 600px;">
+            <div class="search-bar" style="
+                display: flex;
+                align-items: center;
+                background: #fff;
+                border: 1px solid #dfe1e5;
+                border-radius: 24px;
+                padding: 0 14px;
+                height: 44px;
+                box-shadow: none;
+                transition: all 0.2s;
+            ">
+                <span class="search-icon" style="display: flex; align-items: center; margin-right: 12px;">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: #9aa0a6;">
+                        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+                    </svg>
+                </span>
+                <!-- value="{search_query}" 将在后端处理中替换 -->
+                <input type="text" name="q" value="{search_query}" placeholder="搜索文章..." style="
+                    flex: 1;
+                    border: none;
+                    outline: none;
+                    font-size: 16px;
+                    background: transparent;
+                    height: 100%;
+                    color: rgba(0,0,0,0.87);
+                ">
+            </div>
+        </form>
     </div>
 
     {content_list}

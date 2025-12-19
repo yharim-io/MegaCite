@@ -24,3 +24,25 @@
 
 /* Footer */
 .VPFooter { padding: 24px; text-align: center; border-top: 1px solid var(--vp-c-divider); font-size: 14px; color: var(--vp-c-text-2); background: var(--vp-c-bg-soft); margin-top: auto; }
+
+/* Search Bar Hover Effect */
+.search-bar:hover, .search-bar:focus-within {
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28) !important;
+    border-color: rgba(223, 225, 229, 0) !important;
+}
+
+/* Pagination Links */
+.page-link {
+    display: inline-block;
+    padding: 6px 16px;
+    background-color: #fff;
+    border: 1px solid #dfe1e5;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #1a0dab;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+.page-link:hover {
+    background-color: #f1f3f4;
+}

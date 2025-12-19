@@ -138,6 +138,66 @@ class MySQLPostDAO:
 
         return results
 
+    def search_public_posts_paged(self, keyword: str, offset: int, limit: int) -> tuple[list[dict], int]:
+        """
+        搜索公开文章并分页。
+        如果 keyword 为 None 或空字符串，则返回所有公开文章。
+        返回: (posts_list, total_count)
+        """
+        params = []
+        where_clause = "WHERE p.is_public = TRUE"
+        
+        if keyword:
+            # 模糊匹配 title, context, description
+            where_clause += " AND (p.title LIKE %s OR p.context LIKE %s OR p.description LIKE %s)"
+            like_kw = f"%{keyword}%"
+            params.extend([like_kw, like_kw, like_kw])
+            
+        # 1. 获取总数
+        count_sql = f"""
+            SELECT COUNT(*) 
+            FROM posts p 
+            {where_clause}
+        """
+        
+        # 2. 获取分页数据
+        # 注意：我们需要获取 context 以生成高亮摘要
+        data_sql = f"""
+            SELECT p.cid, p.title, p.category, p.date, p.description, u.username, p.context
+            FROM posts p
+            JOIN users u ON p.owner_id = u.id
+            {where_clause}
+            ORDER BY p.date DESC
+            LIMIT %s OFFSET %s
+        """
+        
+        with self.conn.cursor() as cur:
+            cur.execute(count_sql, tuple(params))
+            total = cur.fetchone()[0]
+            
+            # 只有在有数据时才查询详情
+            if total > 0:
+                full_params = params + [limit, offset]
+                cur.execute(data_sql, tuple(full_params))
+                rows = cur.fetchall()
+            else:
+                rows = []
+
+        posts = [
+            {
+                "cid": r[0],
+                "title": r[1],
+                "category": r[2],
+                "date": str(r[3]),
+                "description": r[4],
+                "author": r[5],
+                "context": r[6]  # 完整内容，用于后端截取高亮
+            }
+            for r in rows
+        ]
+        
+        return posts, total
+
     def get_user_categories(self, user_id: int) -> list[str]:
         """获取指定用户的分类列表"""
         with self.conn.cursor() as cur:
