@@ -121,6 +121,7 @@ export function initPostListeners() {
     const bindDeleteBtn = (btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation(); 
+            // 修复逻辑：优先从 dataset 获取 cid，若无则尝试 meta 标签
             deleteTargetCid = btn.dataset.cid || document.querySelector('meta[name="post-cid"]')?.getAttribute('content');
             
             // 检查是否有 data-redirect 属性
