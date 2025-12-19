@@ -217,3 +217,5 @@ public/
 .pytest_cache/
 MC_API_KEY.sh
 server.pid
+build/
+dist/

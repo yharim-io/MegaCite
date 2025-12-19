@@ -4,7 +4,12 @@ Blog Content Migration and Reference Management System.
 
 ## Server Initialization
 
+If you are using conda on the server, please create a new conda environment and enter it; if you do not have conda on your server, please ignore this sentence.
+
 ``` bash
+git clone https://github.com/yharim-io/MegaCite.git
+cd MegaCite
+pip install -r requirements.txt
 bash scripts/install_mysql.sh # `install_mysql_mac.sh` for MacOS
 playwright install
 export MC_API_KEY="your-openai-api-key"
@@ -12,13 +17,21 @@ export SMTP_SERVER="your-smtp-server"
 export SMTP_PORT="your-smtp-port"
 export SMTP_USER="your-email-address"
 export SMTP_PASSWORD="your-email-password-or-token"
-python cli.py server start 8080
 ```
 
-## Client Startup
+Then change the `SERVER_CONFIG` under `core/config.py`:
+
+``` python
+SERVER_CONFIG = {
+    "host": "your ip addr",
+    "port": 8080
+}
+```
+
+Finally:
 
 ``` bash
-python client/verifier.py --server http://127.0.0.1:8080
+python cli.py server start 8080
 ```
 
 ## Migration Test

@@ -12,6 +12,39 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import requests
 
+# ================== 插入代码开始 ==================
+import zipfile
+
+base_path = sys._MEIPASS
+zip_name = "playwright-browsers.zip"
+zip_path = os.path.join(base_path, zip_name)
+extract_path = os.path.join(base_path, "playwright-browsers")
+
+# 设置环境变量
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = extract_path
+
+if os.path.exists(zip_path) and not os.path.exists(extract_path):
+    print(f"[*] Extracting browser kernel...")
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            zf.extractall(extract_path)
+        
+        # 【关键修复】 递归赋予执行权限 (chmod -R 755)
+        print("[*] Restoring file permissions...")
+        for root, dirs, files in os.walk(extract_path):
+            for d in dirs:
+                os.chmod(os.path.join(root, d), 0o755)
+            for f in files:
+                file_path = os.path.join(root, f)
+                # 给所有文件赋予读写执行权限，简单粗暴但有效，防止漏掉二进制文件
+                os.chmod(file_path, 0o755)
+        
+        print("[+] Extraction & Permission fix complete.")
+    except Exception as e:
+        print(f"[-] Failed to setup browsers: {e}")
+        sys.exit(1)
+# ================== 插入代码结束 ==================
+
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
