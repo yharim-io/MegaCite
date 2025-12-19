@@ -34,6 +34,33 @@ Finally:
 python cli.py server start 8080
 ```
 
+## Permission Resolve
+
+Sometimes you will encounter this error
+
+``` bash
+$ python cli.py server start 8080
+[-] Database connection failed: (1698, "Access denied for user 'root'@'localhost'")
+```
+
+The main reason is that the default MySQL installation on Ubuntu enables the auth_socket plugin for the root user.
+
+Resolve it using the following script:
+
+``` bash
+sudo mysql -u root
+USE mysql;
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '114514';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+Now try restarting the server; it should be able to connect to the database normally.
+
+``` bash
+python cli.py server start 8080
+```
+
 ## Migration Test
 
 ### cnblogs
