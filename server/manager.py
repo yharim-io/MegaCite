@@ -98,6 +98,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             print(f"Server Error: {e}")
             self.send_response(400)
             self.wfile.write(json.dumps({'error': str(e)}).encode())
+    
+    def do_DELETE(self):
+        try:
+            # DELETE 请求通常通过 URL 参数传递信息，这里传递空字典作为 data 即可
+            # 依次尝试调用各模块的 DELETE 处理逻辑
+            if handle_interact_routes(self, self.path, "DELETE", {}, SERVER_GEN): return
+            if handle_post_routes(self, self.path, "DELETE", {}, SERVER_GEN): return
+            
+            self.send_error(404, "API Not Found")
+        except Exception as e:
+            print(f"Server Error: {e}")
+            self.send_response(500)
+            self.wfile.write(json.dumps({'error': str(e)}).encode())
 
 def server_start(port: int) -> None:
     global SERVER_GEN

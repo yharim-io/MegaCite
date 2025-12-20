@@ -106,7 +106,8 @@ class HTMLRenderer:
             posts = categorized_posts[category]
             items = []
             for p in posts:
-                is_public_checked = "checked" if p.get('is_public') else ""
+                is_public = p.get('is_public', False)
+                is_public_checked = "checked" if is_public else ""
                 
                 # 获取单篇文章的统计数据 (初始值)
                 p_likes = 0
@@ -117,9 +118,13 @@ class HTMLRenderer:
                 except Exception:
                     pass
 
+                # 定义：私有文章 (Private Post) 指 is_public 为 False 的文章
+                visibility_style = 'style="display:none;"' if not is_public else ''
+                private_class = 'private-post' if not is_public else ''
+
                 # 添加 data-cid 和 data-type 属性，以便 JS 动态更新
                 item_html = f"""
-                <div class="post-item-container console-item">
+                <div class="post-item-container console-item {private_class}" {visibility_style}>
                     <a href="{p['filename']}" class="post-item-link">
                         <div class="post-item-title">{p['title']}</div>
                         <div class="post-item-meta">

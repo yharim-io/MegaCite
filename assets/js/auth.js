@@ -204,6 +204,9 @@ export function updateAuthUI() {
                 document.querySelectorAll('.post-item-controls').forEach(el => {
                     el.style.display = 'flex';
                 });
+                document.querySelectorAll('.private-post').forEach(el => {
+                    el.style.display = ''; 
+                });
             }
         }
 
@@ -229,6 +232,7 @@ export function updateAuthUI() {
             updateBindings();
             fetchUserProfile();
         }
+        
     } else {
         if(guestArea) guestArea.style.display = 'inline-block';
         if(userArea) userArea.style.display = 'none';
